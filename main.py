@@ -34,11 +34,6 @@ def descriptive_analysis():
     disney_movies = df_clean[df_clean['Disney+'] == 1]
     netflix_movies = df_clean[df_clean['Netflix'] == 1]
     
-    # Print basic information
-    print("\nNumber of movies:")
-    print(f"Disney+: {len(disney_movies)}")
-    print(f"Netflix: {len(netflix_movies)}")
-    
     # Create figure with two subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
@@ -61,7 +56,14 @@ def descriptive_analysis():
     ax2.set_ylabel('Score')
     
     plt.tight_layout()
-    plt.show()
+    # Save the figure
+    plt.savefig('descriptive_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # Print basic information
+    print("\nNumber of movies:")
+    print(f"Disney+: {len(disney_movies)}")
+    print(f"Netflix: {len(netflix_movies)}")
     
     # Print summary statistics
     print("\nAge Restriction Summary Statistics:")
@@ -109,6 +111,192 @@ def statistical_tests():
     else:
         print("RT Test Result: Failed to reject H0 - No evidence of difference in scores")
 
-# Run the analysis
+def create_age_visualizations():
+    # Create figure with two subplots side by side
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # 1. Box Plot for Age Restrictions
+    disney_ages = df_clean[df_clean['Disney+'] == 1]['Age_Numeric']
+    netflix_ages = df_clean[df_clean['Netflix'] == 1]['Age_Numeric']
+    
+    ax1.boxplot([disney_ages, netflix_ages], labels=['Disney+', 'Netflix'])
+    ax1.set_title('Age Restrictions Distribution')
+    ax1.set_ylabel('Age Restriction (years)')
+    
+    # 2. Stacked Bar Chart for Age Categories
+    platforms = ['Disney+', 'Netflix']
+    age_categories = ['all', '7+', '13+', '16+', '18+']
+    
+    disney_dist = [(df_clean[(df_clean['Disney+'] == 1) & (df_clean['Age'] == cat)].shape[0] / 
+                   df_clean[df_clean['Disney+'] == 1].shape[0]) * 100 for cat in age_categories]
+    netflix_dist = [(df_clean[(df_clean['Netflix'] == 1) & (df_clean['Age'] == cat)].shape[0] / 
+                    df_clean[df_clean['Netflix'] == 1].shape[0]) * 100 for cat in age_categories]
+    
+    x = np.arange(len(platforms))
+    bottom = np.zeros(2)
+    
+    colors = ['lightgreen', 'yellowgreen', 'orange', 'salmon', 'red']
+    for i, age in enumerate(age_categories):
+        values = [disney_dist[i], netflix_dist[i]]
+        ax2.bar(x, values, bottom=bottom, label=age, color=colors[i])
+        bottom += values
+    
+    ax2.set_title('Age Rating Distribution (%)')
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(platforms)
+    ax2.set_ylabel('Percentage')
+    ax2.legend(title='Age Rating')
+    
+    plt.tight_layout()
+    # Save the figure
+    plt.savefig('age_distribution_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_visualizations():
+    # Create figure with two subplots side by side
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # 1. Violin Plot for Rotten Tomatoes Scores
+    disney_scores = df_clean[df_clean['Disney+'] == 1]['Rotten_Tomatoes']
+    netflix_scores = df_clean[df_clean['Netflix'] == 1]['Rotten_Tomatoes']
+    
+    parts = ax1.violinplot([disney_scores, netflix_scores], showmeans=True)
+    ax1.set_xticks([1, 2])
+    ax1.set_xticklabels(['Disney+', 'Netflix'])
+    ax1.set_title('Distribution of Rotten Tomatoes Scores')
+    ax1.set_ylabel('Rotten Tomatoes Score')
+    
+    # 2. Kernel Density Estimation (KDE) Plot
+    sns.kdeplot(data=disney_scores, ax=ax2, label='Disney+', color='blue')
+    sns.kdeplot(data=netflix_scores, ax=ax2, label='Netflix', color='red')
+    ax2.set_title('Density Distribution of Scores')
+    ax2.set_xlabel('Rotten Tomatoes Score')
+    ax2.set_ylabel('Density')
+    ax2.legend()
+    
+    plt.tight_layout()
+    # Save the figure
+    plt.savefig('quality_distribution_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_additional_visualizations():
+    # Create a figure with 2x2 subplots
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    
+    # 1. Year Distribution Comparison (Histogram)
+    disney_years = df_clean[df_clean['Disney+'] == 1]['Year']
+    netflix_years = df_clean[df_clean['Netflix'] == 1]['Year']
+    
+    ax1.hist(disney_years, alpha=0.5, label='Disney+', bins=20, color='blue')
+    ax1.hist(netflix_years, alpha=0.5, label='Netflix', bins=20, color='red')
+    ax1.set_title('Movie Release Year Distribution')
+    ax1.set_xlabel('Release Year')
+    ax1.set_ylabel('Number of Movies')
+    ax1.legend()
+    
+    # 2. Age vs Rotten Tomatoes Score (Scatter Plot)
+    disney_data = df_clean[df_clean['Disney+'] == 1]
+    netflix_data = df_clean[df_clean['Netflix'] == 1]
+    
+    ax2.scatter(disney_data['Age_Numeric'], disney_data['Rotten_Tomatoes'], 
+               alpha=0.5, label='Disney+', color='blue')
+    ax2.scatter(netflix_data['Age_Numeric'], netflix_data['Rotten_Tomatoes'], 
+               alpha=0.5, label='Netflix', color='red')
+    ax2.set_title('Age Restriction vs Rotten Tomatoes Score')
+    ax2.set_xlabel('Age Restriction')
+    ax2.set_ylabel('Rotten Tomatoes Score')
+    ax2.legend()
+    
+    # 3. Quality Score Range Distribution
+    def get_quality_range(score):
+        if score >= 90: return 'Excellent (90-100)'
+        elif score >= 80: return 'Very Good (80-89)'
+        elif score >= 70: return 'Good (70-79)'
+        elif score >= 60: return 'Fair (60-69)'
+        else: return 'Poor (<60)'
+    
+    df_clean['Quality_Range'] = df_clean['Rotten_Tomatoes'].apply(get_quality_range)
+    quality_ranges = ['Poor (<60)', 'Fair (60-69)', 'Good (70-79)', 
+                     'Very Good (80-89)', 'Excellent (90-100)']
+    
+    disney_quality = df_clean[df_clean['Disney+'] == 1]['Quality_Range'].value_counts()
+    netflix_quality = df_clean[df_clean['Netflix'] == 1]['Quality_Range'].value_counts()
+    
+    disney_percentages = [disney_quality.get(range_, 0) / len(disney_data) * 100 for range_ in quality_ranges]
+    netflix_percentages = [netflix_quality.get(range_, 0) / len(netflix_data) * 100 for range_ in quality_ranges]
+    
+    x = np.arange(len(quality_ranges))
+    width = 0.35
+    
+    ax3.bar(x - width/2, disney_percentages, width, label='Disney+', color='blue', alpha=0.7)
+    ax3.bar(x + width/2, netflix_percentages, width, label='Netflix', color='red', alpha=0.7)
+    ax3.set_title('Quality Score Distribution')
+    ax3.set_xticks(x)
+    ax3.set_xticklabels(quality_ranges, rotation=45)
+    ax3.set_ylabel('Percentage of Movies')
+    ax3.legend()
+    
+    # 4. Age Distribution Over Time
+    years = sorted(df_clean['Year'].unique())
+    disney_age_by_year = [df_clean[(df_clean['Disney+'] == 1) & 
+                                  (df_clean['Year'] == year)]['Age_Numeric'].mean() 
+                         for year in years]
+    netflix_age_by_year = [df_clean[(df_clean['Netflix'] == 1) & 
+                                   (df_clean['Year'] == year)]['Age_Numeric'].mean() 
+                          for year in years]
+    
+    ax4.plot(years, disney_age_by_year, label='Disney+', color='blue', marker='o')
+    ax4.plot(years, netflix_age_by_year, label='Netflix', color='red', marker='o')
+    ax4.set_title('Average Age Restriction Over Time')
+    ax4.set_xlabel('Year')
+    ax4.set_ylabel('Average Age Restriction')
+    ax4.legend()
+    
+    plt.tight_layout()
+    plt.savefig('additional_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_heatmap():
+    # Create correlation matrix for numerical columns
+    numerical_cols = ['Year', 'Age_Numeric', 'Rotten_Tomatoes']
+    correlation_matrix = df_clean[numerical_cols].corr()
+    
+    # Create heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0)
+    plt.title('Correlation Heatmap')
+    plt.tight_layout()
+    plt.savefig('correlation_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_time_series_analysis():
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Group by year and platform, calculate mean scores
+    yearly_scores = df_clean.groupby(['Year', 'Disney+'])['Rotten_Tomatoes'].mean().unstack()
+    yearly_scores.plot(ax=ax1, marker='o')
+    ax1.set_title('Average Rotten Tomatoes Score by Year')
+    ax1.set_xlabel('Year')
+    ax1.set_ylabel('Average Score')
+    ax1.legend(['Netflix', 'Disney+'])
+    
+    # Count number of movies per year
+    yearly_counts = df_clean.groupby(['Year', 'Disney+']).size().unstack()
+    yearly_counts.plot(ax=ax2, marker='o')
+    ax2.set_title('Number of Movies by Year')
+    ax2.set_xlabel('Year')
+    ax2.set_ylabel('Number of Movies')
+    ax2.legend(['Netflix', 'Disney+'])
+    
+    plt.tight_layout()
+    plt.savefig('time_series_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+# Run the analysis and save all plots
 descriptive_analysis()
 statistical_tests()
+create_age_visualizations()
+create_quality_visualizations()
+create_additional_visualizations()
+create_heatmap()
+create_time_series_analysis()
