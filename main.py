@@ -292,6 +292,138 @@ def create_time_series_analysis():
     plt.savefig('time_series_analysis.png', dpi=300, bbox_inches='tight')
     plt.close()
 
+def create_age_analysis_plots():
+    # Create figure with 2x3 subplots
+    fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(20, 12))
+    
+    disney_movies = df_clean[df_clean['Disney+'] == 1]
+    netflix_movies = df_clean[df_clean['Netflix'] == 1]
+    
+    # 1. Box Plot
+    data_age = pd.DataFrame({
+        'Disney+': disney_movies['Age_Numeric'],
+        'Netflix': netflix_movies['Age_Numeric']
+    })
+    sns.boxplot(data=data_age, ax=ax1)
+    ax1.set_title('Age Restrictions Distribution (Box Plot)')
+    ax1.set_ylabel('Age Restriction')
+    
+    # 2. Violin Plot
+    sns.violinplot(data=data_age, ax=ax2)
+    ax2.set_title('Age Restrictions Distribution (Violin Plot)')
+    ax2.set_ylabel('Age Restriction')
+    
+    # 3. Stacked Bar Chart for Age Categories
+    platforms = ['Disney+', 'Netflix']
+    age_categories = ['all', '7+', '13+', '16+', '18+']
+    
+    disney_dist = [(disney_movies['Age'] == cat).mean() * 100 for cat in age_categories]
+    netflix_dist = [(netflix_movies['Age'] == cat).mean() * 100 for cat in age_categories]
+    
+    x = np.arange(len(platforms))
+    bottom = np.zeros(2)
+    
+    colors = ['lightgreen', 'yellowgreen', 'orange', 'salmon', 'red']
+    for i, age in enumerate(age_categories):
+        values = [disney_dist[i], netflix_dist[i]]
+        ax3.bar(x, values, bottom=bottom, label=age, color=colors[i])
+        bottom += values
+    
+    ax3.set_title('Age Rating Distribution (%)')
+    ax3.set_xticks(x)
+    ax3.set_xticklabels(platforms)
+    ax3.set_ylabel('Percentage')
+    ax3.legend(title='Age Rating')
+    
+    # 4. KDE Plot
+    sns.kdeplot(data=disney_movies['Age_Numeric'], ax=ax4, label='Disney+', color='blue')
+    sns.kdeplot(data=netflix_movies['Age_Numeric'], ax=ax4, label='Netflix', color='red')
+    ax4.set_title('Age Distribution Density')
+    ax4.set_xlabel('Age Restriction')
+    ax4.set_ylabel('Density')
+    ax4.legend()
+    
+    # 5. Histogram
+    ax5.hist(disney_movies['Age_Numeric'], alpha=0.5, label='Disney+', bins=10, color='blue')
+    ax5.hist(netflix_movies['Age_Numeric'], alpha=0.5, label='Netflix', bins=10, color='red')
+    ax5.set_title('Age Distribution Histogram')
+    ax5.set_xlabel('Age Restriction')
+    ax5.set_ylabel('Count')
+    ax5.legend()
+    
+    # 6. Age Distribution Over Time
+    years = sorted(df_clean['Year'].unique())
+    disney_age_by_year = [disney_movies[disney_movies['Year'] == year]['Age_Numeric'].mean() 
+                         for year in years]
+    netflix_age_by_year = [netflix_movies[netflix_movies['Year'] == year]['Age_Numeric'].mean() 
+                          for year in years]
+    
+    ax6.plot(years, disney_age_by_year, label='Disney+', color='blue', marker='o')
+    ax6.plot(years, netflix_age_by_year, label='Netflix', color='red', marker='o')
+    ax6.set_title('Average Age Restriction Over Time')
+    ax6.set_xlabel('Year')
+    ax6.set_ylabel('Average Age Restriction')
+    ax6.legend()
+    
+    plt.tight_layout()
+    plt.savefig('age_analysis_comprehensive.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_age_category_analysis():
+    # Create figure with 1x2 subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    disney_movies = df_clean[df_clean['Disney+'] == 1]
+    netflix_movies = df_clean[df_clean['Netflix'] == 1]
+    
+    # 1. Pie Chart for Disney+
+    disney_age_dist = disney_movies['Age'].value_counts()
+    ax1.pie(disney_age_dist, labels=disney_age_dist.index, autopct='%1.1f%%',
+            colors=['lightgreen', 'yellowgreen', 'orange', 'salmon', 'red'])
+    ax1.set_title('Disney+ Age Distribution')
+    
+    # 2. Pie Chart for Netflix
+    netflix_age_dist = netflix_movies['Age'].value_counts()
+    ax2.pie(netflix_age_dist, labels=netflix_age_dist.index, autopct='%1.1f%%',
+            colors=['lightgreen', 'yellowgreen', 'orange', 'salmon', 'red'])
+    ax2.set_title('Netflix Age Distribution')
+    
+    plt.tight_layout()
+    plt.savefig('age_distribution_pies.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_age_summary_stats():
+    # Create summary statistics
+    disney_movies = df_clean[df_clean['Disney+'] == 1]
+    netflix_movies = df_clean[df_clean['Netflix'] == 1]
+    
+    summary_stats = pd.DataFrame({
+        'Disney+': disney_movies['Age_Numeric'].describe(),
+        'Netflix': netflix_movies['Age_Numeric'].describe()
+    })
+    
+    # Create a figure for the table
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.axis('tight')
+    ax.axis('off')
+    
+    # Create table
+    table = ax.table(cellText=summary_stats.round(2).values,
+                    rowLabels=summary_stats.index,
+                    colLabels=summary_stats.columns,
+                    cellLoc='center',
+                    loc='center')
+    
+    # Modify table appearance
+    table.auto_set_font_size(False)
+    table.set_fontsize(9)
+    table.scale(1.2, 1.5)
+    
+    plt.title('Age Restriction Summary Statistics', pad=20)
+    plt.tight_layout()
+    plt.savefig('age_summary_stats.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
 # Run the analysis and save all plots
 descriptive_analysis()
 statistical_tests()
@@ -300,3 +432,6 @@ create_quality_visualizations()
 create_additional_visualizations()
 create_heatmap()
 create_time_series_analysis()
+create_age_analysis_plots()
+create_age_category_analysis()
+create_age_summary_stats()
