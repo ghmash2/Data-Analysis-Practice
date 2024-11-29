@@ -187,7 +187,7 @@ def create_quality_histogram():
     netflix_scores = df_clean[df_clean['Netflix'] == 1]['Rotten_Tomatoes']
     
     plt.hist(disney_scores, alpha=0.5, label='Disney+', bins=20, color='blue')
-    plt.hist(netflix_scores, alpha=0.5, label='Netflix', bins=20, color='red')
+    plt.hist(netflix_scores, alpha=0.5, label='Netflix', bins=20, color='purple')
     plt.title('Distribution of Rotten Tomatoes Scores')
     plt.xlabel('Score')
     plt.ylabel('Number of Movies')
