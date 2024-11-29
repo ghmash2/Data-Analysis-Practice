@@ -152,31 +152,148 @@ def create_age_visualizations():
     plt.savefig('age_distribution_analysis.png', dpi=300, bbox_inches='tight')
     plt.close()
 
-def create_quality_visualizations():
-    # Create figure with two subplots side by side
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+def create_quality_boxplot():
+    plt.figure(figsize=(10, 6))
     
-    # 1. Violin Plot for Rotten Tomatoes Scores
+    data_rt = pd.DataFrame({
+        'Disney+': df_clean[df_clean['Disney+'] == 1]['Rotten_Tomatoes'],
+        'Netflix': df_clean[df_clean['Netflix'] == 1]['Rotten_Tomatoes']
+    })
+    
+    sns.boxplot(data=data_rt)
+    plt.title('Rotten Tomatoes Score Distribution')
+    plt.ylabel('Score')
+    plt.savefig('quality_boxplot.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_violin():
+    plt.figure(figsize=(10, 6))
+    
+    data_rt = pd.DataFrame({
+        'Disney+': df_clean[df_clean['Disney+'] == 1]['Rotten_Tomatoes'],
+        'Netflix': df_clean[df_clean['Netflix'] == 1]['Rotten_Tomatoes']
+    })
+    
+    sns.violinplot(data=data_rt)
+    plt.title('Rotten Tomatoes Score Distribution (Violin Plot)')
+    plt.ylabel('Score')
+    plt.savefig('quality_violin.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_histogram():
+    plt.figure(figsize=(10, 6))
+    
     disney_scores = df_clean[df_clean['Disney+'] == 1]['Rotten_Tomatoes']
     netflix_scores = df_clean[df_clean['Netflix'] == 1]['Rotten_Tomatoes']
     
-    parts = ax1.violinplot([disney_scores, netflix_scores], showmeans=True)
-    ax1.set_xticks([1, 2])
-    ax1.set_xticklabels(['Disney+', 'Netflix'])
-    ax1.set_title('Distribution of Rotten Tomatoes Scores')
-    ax1.set_ylabel('Rotten Tomatoes Score')
+    plt.hist(disney_scores, alpha=0.5, label='Disney+', bins=20, color='blue')
+    plt.hist(netflix_scores, alpha=0.5, label='Netflix', bins=20, color='red')
+    plt.title('Distribution of Rotten Tomatoes Scores')
+    plt.xlabel('Score')
+    plt.ylabel('Number of Movies')
+    plt.legend()
+    plt.savefig('quality_histogram.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_kde():
+    plt.figure(figsize=(10, 6))
     
-    # 2. Kernel Density Estimation (KDE) Plot
-    sns.kdeplot(data=disney_scores, ax=ax2, label='Disney+', color='blue')
-    sns.kdeplot(data=netflix_scores, ax=ax2, label='Netflix', color='red')
-    ax2.set_title('Density Distribution of Scores')
-    ax2.set_xlabel('Rotten Tomatoes Score')
-    ax2.set_ylabel('Density')
-    ax2.legend()
+    disney_scores = df_clean[df_clean['Disney+'] == 1]['Rotten_Tomatoes']
+    netflix_scores = df_clean[df_clean['Netflix'] == 1]['Rotten_Tomatoes']
     
+    sns.kdeplot(data=disney_scores, label='Disney+', color='blue')
+    sns.kdeplot(data=netflix_scores, label='Netflix', color='red')
+    plt.title('Density Distribution of Rotten Tomatoes Scores')
+    plt.xlabel('Score')
+    plt.ylabel('Density')
+    plt.legend()
+    plt.savefig('quality_kde.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_categories():
+    plt.figure(figsize=(12, 6))
+    
+    def get_quality_category(score):
+        if score >= 90: return 'Excellent (90-100)'
+        elif score >= 80: return 'Very Good (80-89)'
+        elif score >= 70: return 'Good (70-79)'
+        elif score >= 60: return 'Fair (60-69)'
+        else: return 'Poor (<60)'
+    
+    disney_movies = df_clean[df_clean['Disney+'] == 1]
+    netflix_movies = df_clean[df_clean['Netflix'] == 1]
+    
+    disney_movies['Quality'] = disney_movies['Rotten_Tomatoes'].apply(get_quality_category)
+    netflix_movies['Quality'] = netflix_movies['Rotten_Tomatoes'].apply(get_quality_category)
+    
+    categories = ['Poor (<60)', 'Fair (60-69)', 'Good (70-79)', 
+                 'Very Good (80-89)', 'Excellent (90-100)']
+    
+    disney_dist = [len(disney_movies[disney_movies['Quality'] == cat]) / len(disney_movies) * 100 
+                  for cat in categories]
+    netflix_dist = [len(netflix_movies[netflix_movies['Quality'] == cat]) / len(netflix_movies) * 100 
+                   for cat in categories]
+    
+    x = np.arange(len(categories))
+    width = 0.35
+    
+    plt.bar(x - width/2, disney_dist, width, label='Disney+', color='blue', alpha=0.7)
+    plt.bar(x + width/2, netflix_dist, width, label='Netflix', color='red', alpha=0.7)
+    plt.title('Quality Score Distribution by Category')
+    plt.xticks(x, categories, rotation=45)
+    plt.ylabel('Percentage of Movies')
+    plt.legend()
     plt.tight_layout()
-    # Save the figure
-    plt.savefig('quality_distribution_analysis.png', dpi=300, bbox_inches='tight')
+    plt.savefig('quality_categories.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_time_series():
+    plt.figure(figsize=(12, 6))
+    
+    years = sorted(df_clean['Year'].unique())
+    disney_scores = [df_clean[(df_clean['Disney+'] == 1) & 
+                            (df_clean['Year'] == year)]['Rotten_Tomatoes'].mean() 
+                    for year in years]
+    netflix_scores = [df_clean[(df_clean['Netflix'] == 1) & 
+                             (df_clean['Year'] == year)]['Rotten_Tomatoes'].mean() 
+                     for year in years]
+    
+    plt.plot(years, disney_scores, label='Disney+', color='blue', marker='o')
+    plt.plot(years, netflix_scores, label='Netflix', color='red', marker='o')
+    plt.title('Average Rotten Tomatoes Score by Year')
+    plt.xlabel('Year')
+    plt.ylabel('Average Score')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig('quality_time_series.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+def create_quality_summary_stats():
+    disney_movies = df_clean[df_clean['Disney+'] == 1]
+    netflix_movies = df_clean[df_clean['Netflix'] == 1]
+    
+    summary_stats = pd.DataFrame({
+        'Disney+': disney_movies['Rotten_Tomatoes'].describe(),
+        'Netflix': netflix_movies['Rotten_Tomatoes'].describe()
+    })
+    
+    plt.figure(figsize=(8, 6))
+    ax = plt.gca()
+    ax.axis('tight')
+    ax.axis('off')
+    
+    table = ax.table(cellText=summary_stats.round(2).values,
+                    rowLabels=summary_stats.index,
+                    colLabels=summary_stats.columns,
+                    cellLoc='center',
+                    loc='center')
+    
+    table.auto_set_font_size(False)
+    table.set_fontsize(9)
+    table.scale(1.2, 1.5)
+    
+    plt.title('Rotten Tomatoes Score Summary Statistics', pad=20)
+    plt.savefig('quality_summary_stats.png', dpi=300, bbox_inches='tight')
     plt.close()
 
 def create_additional_visualizations():
@@ -428,7 +545,13 @@ def create_age_summary_stats():
 descriptive_analysis()
 statistical_tests()
 create_age_visualizations()
-create_quality_visualizations()
+create_quality_boxplot()
+create_quality_violin()
+create_quality_histogram()
+create_quality_kde()
+create_quality_categories()
+create_quality_time_series()
+create_quality_summary_stats()
 create_additional_visualizations()
 create_heatmap()
 create_time_series_analysis()
